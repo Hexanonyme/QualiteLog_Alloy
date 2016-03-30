@@ -1,56 +1,4 @@
-/* Capacités */
-
-open util/ordering[Commande] as co
-open util/ordering[Time] as to
-
-//Signatures :
-sig Time {}
-
-sig Position
-{
-	nord : one Position,
-	est : one Position,
-	sud : one Position,
-	ouest : one Position
-}
-
-/* Capacités de produits */
-one sig Capacite
-{
-	dcap : Int[5], // !!! valeurs à revoir
-	rcap: Int[5]
-}
-
-sig Drone 
-{
-	positions: set Position,
-	pos : positions one -> Time,
-	cmd : lone Commande,
-	charge: Int one -> Time, // nb de produits
-	batterie : Int one -> Time // !!! à revoir si initialisation ici
-}
-
-sig Produit
-{
-}
-
-sig Commande
-{
-	produit : some Produit,
-	rec: one Receptacle
-}
-
-one sig Entrepot
-{
-	cmdALivrer: set Commande,
-	pos: one Position
-}
-
-sig Receptacle
-{	
-	pos: one Position,
-	charge : Int one -> Time
-}
+open signatures
 
 //Prédicats :
 
@@ -157,8 +105,3 @@ fact SortirDeEntrepot
 {
 	all d:Drone, t:Time | (batteriePleine[d,t] && surEntrepot[d,t]) => enDeplacement[d,t.next] 
 }
-
-pred go{}
-run go for 3 but exactly 10 Time, exactly 1 Drone, exactly 2 Position
-//check SortirDeEntrepot for 3 but exactly 6 Time, exactly 2 Drone, exactly 2 Position
-
