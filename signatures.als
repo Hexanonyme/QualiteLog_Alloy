@@ -29,6 +29,7 @@ one sig BottomRight extends Position {}
 
 one sig Entrepot extends Receptacle
 {
+
 	cmdALivrer: set Commande,
 	currentCmd: cmdALivrer one ->Time 
 }
@@ -59,11 +60,10 @@ sig Commande
 	rec: one Receptacle
 }
 
-fact F13 
+fact 
 {
     #((Commande -> Entrepot) & rec)=0
 }
-
 
 sig Receptacle
 {	
