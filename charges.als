@@ -20,11 +20,6 @@ pred surReceptacle [ d:Drone , t:Time]
 }
 
 
-pred enDeplacement [ d:Drone, t:Time]
-{
-	!surEntrepot[d,t] //&& !surReceptacle[d,t] 
-}
-
 pred surBonReceptacle [ d:Drone , t:Time]
 {
 	d.pos.t = d.cmd.rec.pos
@@ -71,14 +66,6 @@ pred dechargerBatterie [ d: Drone, t:Time]
 	{
 		d.batterie.t' = add[d.batterie.t, Int[-1]]
 	}	
-}
-
-
-/* Une fois le réceptacle rejoint, l'action de livrer les produits prend 1 unité de temps. */
-pred livrerProduits [ d: Drone, t:Time]
-{
-	1 = 0
-	// remettre charge à 0
 }
 
 //Faits :
