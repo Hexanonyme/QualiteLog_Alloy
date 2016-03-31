@@ -19,6 +19,8 @@ fact
 	#BottomLeft.nord = 1
 	#BottomLeft.est = 1
 	#TopLeft.est = 1
+	all r : Receptacle | r.pos.isReceptacle = 1
+	(Commande -> Receptacle).Receptacle = Entrepot.cmdALivrer
 }
 
 //Fonctions
@@ -87,17 +89,24 @@ pred positionReceptacles
 	all r1, r2 : Receptacle | r1.pos != r2.pos or r1 = r2
 }
 
+// A un instant t, au plus drone peut interagir avec un réceptacle
+// +
+// A un instant t, il y a au plus un drone à chaque intersection de la grille
 pred positionDrones
 {
 	all d1, d2 : Drone, t:Time | d1.pos.t != d2.pos.t or d1 = d2 or (d1.pos.t = Entrepot.pos and d2.pos.t = Entrepot.pos)
 }
 
+
+// Il existe au moins un receptacle voisin de l'entrepot 
+// +
+// La distance entre tout couple d'élément consécutif de ce chemin doit être inférieur au égale à trois
 pred eloignementReceptacle
 {
 	all r1, r2 : Receptacle | r1 != r2 => lte [manhattan[r1.pos, r2.pos], Int[3]]
 }
 
-pred prog
+pred progCarte
 {
 	positionRelations and positionReceptacles and positionDrones and eloignementReceptacle
 }
@@ -105,7 +114,7 @@ pred prog
 //Assertions
 assert NoReceptacleOnEntrepot
 {
-	prog => 
+	progCarte => 
 	all r : Receptacle | r.pos != Entrepot.pos
 	and
 	all r1, r2 : Receptacle | r1 != r2 => r1.pos != r2.pos
@@ -113,12 +122,12 @@ assert NoReceptacleOnEntrepot
 
 assert AssertDronePosition
 {
-	prog => 
+	progCarte => 
 	all d1, d2 : Drone, t:Time | d1 != d2 =>d1.pos.t != d2.pos.t  or (d1.pos.t = Entrepot.pos and d2.pos.t = Entrepot.pos)
 }
 
 assert AssertPositionReceptacle
 {
-	prog => 
+	progCarte => 
 	all r1, r2 : Receptacle | r1 != r2 => lte [manhattan[r1.pos, r2.pos], Int[3]]
 }

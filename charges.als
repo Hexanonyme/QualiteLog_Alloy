@@ -1,12 +1,6 @@
 open signatures
 
 //Prédicats :
-
-pred init [t:Time]
-{
-	all d : Drone, e:Entrepot, r:Receptacle | d.pos.t = e.pos && d.batterie.t = Int[1] && d.charge.t =Int[0] && r.charge.t = Int[0]
-}
-
 pred surEntrepot [ d:Drone, t:Time] 
 {
 	some e:Entrepot | d.pos.t = e.pos
@@ -77,7 +71,7 @@ fact chargeReceptacleMaximum
 	Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */ 
 fact DroneEntrepot 
 {	
-	init[first]
+//	init[first]
 	all d : Drone, t :Time | (surEntrepot[d,t] && !batteriePleine[d,t]) => ( chargerBatterie[d,t] && surEntrepot[d,t.next])										
 }
 

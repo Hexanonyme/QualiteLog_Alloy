@@ -13,7 +13,8 @@ sig Position
 	sud : lone Position,
 	ouest : lone Position,
 	x : Int,
-	y : Int
+	y : Int,
+	isReceptacle : Int
 }
 
 one sig TopLeft extends Position {}
@@ -28,7 +29,8 @@ one sig BottomRight extends Position {}
 
 one sig Entrepot extends Receptacle
 {
-	cmdALivrer: set Commande
+	cmdALivrer: set Commande,
+	currentCmd: cmdALivrer one ->Time 
 }
 
 /* Capacités de produits */
@@ -42,7 +44,7 @@ sig Drone
 {
 	positions: set Position,
 	pos : positions one -> Time,
-	cmd : lone Commande,
+	cmd : Commande lone -> Time,
 	charge: Int one -> Time, // nb de produits
 	batterie : Int one -> Time // !!! à revoir si initialisation ici
 }
@@ -55,6 +57,11 @@ sig Commande
 {
 	produit : some Produit,
 	rec: one Receptacle
+}
+
+fact F13 
+{
+    #((Commande -> Entrepot) & rec)=0
 }
 
 
