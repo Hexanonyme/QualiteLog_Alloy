@@ -1,5 +1,6 @@
 open signatures
 open carte
+open charges2
 
 //Faits
 pred setCommande  [t: Time, d: Drone]
@@ -50,8 +51,9 @@ fact traces
 	init [first]
     all t: Time-last | let t' = t.next
     {
-		all d : Drone |  arretSurReceptacleBatterieVide[t, d] and interdictionSaut[t, t', d] and setCommande[t, d] and
-			(eq[d.pos.t.isReceptacle, 0] => moveDrone [t, t', d] or arretSurReceptacle [t, t', d] )
+		all d : Drone |  arretSurReceptacleBatterieVide[t, d] and interdictionSaut[t, t', d] /*and setCommande[t, d]*/ and
+			(eq[d.pos.t.isReceptacle, 0] => moveDrone [t, t', d] or arretSurReceptacle [t, t', d] ) and
+			progEntrepot[d,t] and Deplacement[d,t] and progReceptacle[d,t] 
 	}
 }
 

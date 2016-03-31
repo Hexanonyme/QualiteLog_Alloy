@@ -34,20 +34,14 @@ one sig Entrepot extends Receptacle
 	currentCmd: cmdALivrer one ->Time 
 }
 
-/* Capacités de produits */
-one sig Capacite
-{
-	dcap : Int[5], // !!! valeurs à revoir
-	rcap: Int[5]
-}
-
 sig Drone 
 {
 	positions: set Position,
 	pos : positions one -> Time,
 	cmd : Commande lone -> Time,
-	charge: Int one -> Time, // nb de produits
-	batterie : Int one -> Time // !!! à revoir si initialisation ici
+	dcap : Int[5], // valeur à revoir
+	charge: Int one -> Time, 
+	batterie : Int one -> Time 
 }
 
 sig Produit
@@ -68,5 +62,6 @@ fact
 sig Receptacle
 {	
 	pos: one Position,
-	charge : Int one -> Time
+	charge : Int one -> Time,
+	rcap: Int[5] // valeur à revoir
 }

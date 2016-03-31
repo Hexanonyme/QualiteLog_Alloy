@@ -1,4 +1,4 @@
-open signatures
+//open signatures
 
 //Prédicats :
 
@@ -22,7 +22,7 @@ pred surReceptacle [ d:Drone , t:Time]
 
 pred surBonReceptacle [ d:Drone , t:Time]
 {
-	d.pos.t = d.cmd.rec.pos
+	d.pos.t = d.cmd.t.rec.pos
 }
 
 pred enDeplacement [ d:Drone, t:Time]
@@ -207,7 +207,6 @@ fact DroneDeplacement
 
 
 //Assertions :
-
 
 /* Un drone ne peut pas livrer ses produits et recharger sa batterie en même temps */
 assert NoLivraisonBatterie
