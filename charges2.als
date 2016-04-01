@@ -4,7 +4,7 @@ open signatures
 
 pred surEntrepot [ d:Drone, t:Time] 
 {
-	some e:Entrepot | d.pos.t = e.pos
+	Entrepot.pos = d.pos.t 
 }
 
 pred surReceptacle [ d:Drone , t:Time]
@@ -22,23 +22,24 @@ pred enDeplacement [ d:Drone, t:Time]
 	let t' =t.next
 	{
 		d.pos.t' != d.pos.t
+//	moveDrone[t, t', d]
 	}
 }
 
  /* La capacité de la batterie d'un drone est de 3 unités d'énergie */	
 pred batteriePleine [d:Drone, t:Time]
 {
-	d.batterie.t = Int[3]
+	eq[d.batterie.t, Int[3]]
 }
 
 pred batterieVide [d:Drone, t:Time]
 {
-	d.batterie.t = Int[0]
+	eq[d.batterie.t, Int[0]]
 }
 
 pred chargeVide [ d:Drone, t:Time]
 {	
-	d.charge.t = Int[0]
+	eq[d.charge.t, Int[0]]
 }
 
 /* Un drone prend 1 unité de temps pour recharger sa batterie de 1 unité d'énergie */
@@ -71,12 +72,12 @@ pred batterieConstante [ d: Drone, t:Time]
 /* Une fois le réceptacle rejoint, l'action de livrer les produits prend 1 unité de temps. */
 pred livrerProduits [ d: Drone, t:Time]
 {	
-	some r:Receptacle |
+//	some r:Receptacle |
 	let t' =t.next
 	{		
-			!enDeplacement[d,t] && batterieConstante[d,t]  &&
-		 ( ( add[r.charge.t, d.charge.t] <=  r.rcap )  => ((r.charge.t' = add[r.charge.t, d.charge.t]) && chargeVide[d,t']) else
-		  ( (r.charge.t' = r.rcap) && (d.charge.t' = sub[d.charge.t, sub[r.rcap, r.charge.t]]) && viderReceptacle[r,t'] ) )
+	/*	!enDeplacement[d,t]&& batterieConstante[d,t]  &&d.charge.t' = Int[0] &&*/ #d.cmd.t' = 0
+		// ( ( add[r.charge.t, d.charge.t] <=  r.rcap )  => ((r.charge.t' = add[r.charge.t, d.charge.t]) && chargeVide[d,t']) else
+		 // ( (r.charge.t' = r.rcap) && (d.charge.t' = sub[d.charge.t, sub[r.rcap, r.charge.t]]) && viderReceptacle[r,t'] ) )
 	}
 }
 
@@ -93,7 +94,7 @@ pred chargerCommande [ d:Drone, t:Time]
 {
 	let t' =t.next
 	{
-		some e:Entrepot | d.cmd.t'= e.currentCmd.t && e.currentCmd.t' = next[e.currentCmd.t] && d.charge.t' = #d.cmd.t'.produit 
+		 d.cmd.t'= Entrepot.currentCmd.t &&  Entrepot.currentCmd.t' = next[Entrepot.currentCmd.t] && d.charge.t' = #d.cmd.t'.produit 
 	}
 }
 
@@ -124,13 +125,20 @@ pred peutBouger{}
 /* Un drone peut recharger sa batterie au niveau de l'entrepôt. */	
 pred BatterieEntrepot[d: Drone, t:Time] 
 {
-	(surEntrepot[d,t] && chargeVide[d,t] && !batteriePleine[d,t]) => ( chargerBatterie[d,t] && !enDeplacement[d,t] && chargeConstante[d,t])								
+	let t' =t.next
+	{
+		(surEntrepot[d,t] && chargeVide[d,t] && !batteriePleine[d,t]) =>  (chargerBatterie[d,t] && !enDeplacement[d,t] && chargeConstante[d,t] && #d.cmd.t' = 0)						
+	}
 }
 
 /*	Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */
 pred ChargementEntrepot[d: Drone, t:Time]
 {
-	(chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t]) => chargerCommande[d,t] && !enDeplacement[d,t] && batterieConstante[d,t]
+	let t' =t.next
+	{
+		(chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t]) => (chargerCommande[d,t] && !enDeplacement[d,t] && batterieConstante[d,t])
+			 else 	Entrepot.currentCmd.t = Entrepot.currentCmd.t'
+	}
 }
 
 pred QuitterEntrepot[d: Drone, t:Time]
@@ -149,7 +157,7 @@ pred progEntrepot[d:Drone ,t:Time]
 /* Un drone interagit avec un réceptacle pour y déposer les produits qu'il porte.	*/
 pred LivraisonReceptacle[d: Drone, t:Time] 
 {		
-	(surBonReceptacle[d,t] && !chargeVide[d,t] )=> livrerProduits[d,t]
+	(surBonReceptacle[d,t] && !chargeVide[d,t] )=> livrerProduits[d,t] 	
 }
 
 /*	Un réceptacle lambda permet aussi à un drone de recharger sa batterie. */
@@ -172,7 +180,7 @@ pred QuitterReceptacle[d:Drone,t:Time]
 
 pred progReceptacle[d:Drone ,t:Time]
 {
-	LivraisonReceptacle[d,t] and BatterieReceptacle[d,t] and BatterieBonReceptacle[d,t] and QuitterReceptacle[d,t]
+	LivraisonReceptacle[d,t] //and BatterieReceptacle[d,t]and BatterieBonReceptacle[d,t] and QuitterReceptacle[d,t]
 }
 
 // ni Entrepot ni Receptacle

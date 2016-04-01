@@ -19,7 +19,7 @@ fact
 	#BottomLeft.nord = 1
 	#BottomLeft.est = 1
 	#TopLeft.est = 1
-	all r : Receptacle | r.pos.isReceptacle = 1
+//	all  p : Position | all r : Receptacle | p = r.pos => r.pos.isReceptacle = Int[1] else p.isReceptacle = Int[0]
 	(Commande -> Receptacle).Receptacle = Entrepot.cmdALivrer
 }
 
