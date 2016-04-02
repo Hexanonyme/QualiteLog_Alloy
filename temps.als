@@ -2,12 +2,6 @@ open signatures
 open carte
 open charges2
 
-//Faits
-/*pred setCommande  [t: Time, d: Drone]
-{
-	d.pos.t = Entrepot.pos and #d.cmd = 0/* and d.batterie.t = Int[3]*/ /*=> Entrepot.currentCmd.t = next[Entrepot.currentCmd.t]/*	and d.cmd.t = Entrepot.currentCmd.t
-}*/
-
 //Prédicats
 pred init [t:Time]
 {
@@ -18,20 +12,6 @@ pred init [t:Time]
 	&& #d.cmd.t = 0 
 	&& Entrepot.currentCmd.t = first
 }
-
-/*
-pred arretSurReceptacleBatterieVide[t: Time, d: Drone] 
-{
-	eq[d.batterie.t, 0] => eq[d.pos.t.isReceptacle, 1]
-}
-
-pred arretSurReceptacle[t, t': Time, d: Drone] 
-{
-
-	((!peutBouger && !chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] ) => (!enDeplacement[d,t] && chargeConstante[d,t] && batterieConstante[d,t] ))
-	eq[d.batterie.t, 0] => eq[d.pos.t.isReceptacle, 1]
-}
-*/
 
 pred interdictionSaut  [t, t': Time, d: Drone]
 {
@@ -48,8 +28,7 @@ pred moveDrone [t, t': Time, d: Drone]
 	{
 		d.pos.t' = newPos
 	}
-    dechargerBatterie[d,t] and
-	(#d.cmd.t = 0 => #d.cmd.t' = 0 else (d.cmd.t' = d.cmd.t))
+    dechargerBatterie[d,t]
 }
 
 pred progTemps 
@@ -57,10 +36,12 @@ pred progTemps
 	init [first]
     all t: Time-last | let t' = t.next
     {
-		all d : Drone |  /*arretSurReceptacleBatterieVide[t, d] and*/ interdictionSaut[t, t', d] /*and setCommande[t, d]*/ and
-		progEntrepot[d,t]  and progReceptacle[d,t]  and 
-		(!surEntrepot[d,t] && !surReceptacle[d,t]=> enDeplacement[d,t]) and
-		(( !batterieVide[d,t] && enDeplacement[d,t])   => moveDrone [t, t', d])
+		all d : Drone |  interdictionSaut[t, t', d] 
+		and progEntrepot[d,t] 
+		and progReceptacle[d,t] 
+		and ((!surEntrepot[d,t] && !surReceptacle[d,t] && !surBonReceptacle[d,t] && !batterieVide[d,t] ) =>  moveDrone [t, t', d]) 
+		and ((!chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] ) =>  moveDrone [t, t', d]) 
+		and (( batteriePleine[d,t] && (surReceptacle[d,t] || surBonReceptacle[d,t])) => moveDrone [t, t', d])
 	}
 }
 
