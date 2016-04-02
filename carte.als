@@ -84,8 +84,8 @@ pred positionRelations
 
 pred positionReceptacles
 {
-	all r : Receptacle | (r.pos != Entrepot.pos or r = Entrepot) 
-	and
+/*	all r : Receptacle | (r.pos != Entrepot.pos or r = Entrepot) 
+	and*/
 	all r1, r2 : Receptacle | r1.pos != r2.pos or r1 = r2
 }
 

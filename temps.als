@@ -17,7 +17,7 @@ pred interdictionSaut  [t, t': Time, d: Drone]
 {
 	// enlevé: si on a livré et qu'on veut retourner à l'entrepot
 	/*#d.cmd.t = 0 => d.pos.t' = d.pos.t else*/
-	(d.pos.t' = d.pos.t.nord or d.pos.t' = d.pos.t.est or d.pos.t' = d.pos.t.sud or d.pos.t' = d.pos.t.ouest or d.pos.t' = d.pos.t)
+	(d.pos.t' = d.pos.t.nord or d.pos.t' = d.pos.t.est or d.pos.t' = d.pos.t.sud or d.pos.t' = d.pos.t.ouest or positionConstante[d,t])
 }
 
 

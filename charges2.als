@@ -9,19 +9,19 @@ pred surEntrepot [ d:Drone, t:Time]
 
 pred surReceptacle [ d:Drone , t:Time]
 {
-	some r:Receptacle | (d.pos.t = r.pos) && !surEntrepot[d,t] && !surBonReceptacle[d,t]
+	some r:Receptacle | (d.pos.t = r.pos) && !surBonReceptacle[d,t]
 }
 
 pred surBonReceptacle [ d:Drone , t:Time]
 {
-	d.pos.t = d.cmd.t.rec.pos && !surEntrepot[d,t]
+	d.pos.t = d.cmd.t.rec.pos 
 }
 
-pred enDeplacement [ d:Drone, t:Time]
+pred positionConstante [ d:Drone, t:Time]
 {
 	let t' =t.next
 	{
-		d.pos.t' != d.pos.t
+		d.pos.t' = d.pos.t
 	}
 }
 
@@ -92,7 +92,7 @@ pred chargerBatterie [ d: Drone, t:Time]
 	{
 		!batteriePleine[d,t] => (d.batterie.t' = add[d.batterie.t, Int[1]]) else batterieConstante[d,t]
 	}
-	/*chargeConstante[d,t] and */commandeDroneConstante[d,t] and !enDeplacement[d,t]
+	/*chargeConstante[d,t] and */commandeDroneConstante[d,t] and positionConstante[d,t]
 }
 
 /* Un drone consomme 1 unité d'énergie pour faire 1 pas sur la grille.
@@ -111,9 +111,10 @@ pred chargerCommande [ d:Drone, t:Time]
 {
 	let t' =t.next
 	{
-		 d.cmd.t'= Entrepot.currentCmd.t &&  Entrepot.currentCmd.t' = next[Entrepot.currentCmd.t] && d.charge.t' = #d.cmd.t'.produit 
+		d.cmd.t'= Entrepot.currentCmd.t && d.charge.t' = #d.cmd.t'.produit 
+		&& ( ( Entrepot.currentCmd.t != last) => ( Entrepot.currentCmd.t' = next[Entrepot.currentCmd.t]) else (#Entrepot.currentCmd.t'=0) )
 	}
-	batterieConstante[d,t] and !enDeplacement[d,t]
+	batterieConstante[d,t] and positionConstante[d,t]
 }
 
 /* Une fois le réceptacle rejoint, l'action de livrer les produits prend 1 unité de temps. */
@@ -126,7 +127,7 @@ pred livrerProduits [ d: Drone, t:Time]
 		// ( ( add[r.charge.t, d.charge.t] <=  r.rcap )  => ((r.charge.t' = add[r.charge.t, d.charge.t]) && chargeVide[d,t']) else
 		 // ( (r.charge.t' = r.rcap) && (d.charge.t' = sub[d.charge.t, sub[r.rcap, r.charge.t]]) && viderReceptacle[r,t'] ) )
 	}
-	batterieConstante[d,t] && !enDeplacement[d,t]
+	batterieConstante[d,t] && positionConstante[d,t]
 }
 
 pred viderReceptacle [ r:Receptacle, t:Time]

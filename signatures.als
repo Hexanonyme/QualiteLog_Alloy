@@ -2,8 +2,6 @@ open util/ordering[Commande] as co
 open util/ordering[Time] as to
 open util/integer as integer
 
-//Signatures :
-
 sig Time {}
 
 sig Position
@@ -21,17 +19,22 @@ one sig TopLeft extends Position {}
 
 one sig TopRight extends Position {}
 
-one sig BottomLeft extends Position 
-{
-}
+one sig BottomLeft extends Position {}
 
 one sig BottomRight extends Position {}
 
-one sig Entrepot extends Receptacle
+one sig Entrepot
 {
-
 	cmdALivrer: set Commande,
-	currentCmd: cmdALivrer one ->Time 
+	currentCmd: cmdALivrer lone ->Time,
+	pos: one Position
+}
+
+sig Receptacle
+{	
+	pos: one Position,
+	charge : Int one -> Time,
+	rcap: Int[5] // valeur à revoir
 }
 
 sig Drone 
@@ -44,24 +47,12 @@ sig Drone
 	batterie : Int one -> Time 
 }
 
-sig Produit
-{
-}
-
 sig Commande
 {
 	produit : some Produit,
 	rec: one Receptacle
 }
 
-fact 
-{
-    #((Commande -> Entrepot) & rec)=0
-}
+sig Produit {}
 
-sig Receptacle
-{	
-	pos: one Position,
-	charge : Int one -> Time,
-	rcap: Int[5] // valeur à revoir
-}
+
