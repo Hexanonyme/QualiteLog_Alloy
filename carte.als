@@ -19,7 +19,6 @@ fact
 	#BottomLeft.nord = 1
 	#BottomLeft.est = 1
 	#TopLeft.est = 1
-//	all  p : Position | all r : Receptacle | p = r.pos => r.pos.isReceptacle = Int[1] else p.isReceptacle = Int[0]
 	(Commande -> Receptacle).Receptacle = Entrepot.cmdALivrer
 }
 
@@ -84,8 +83,6 @@ pred positionRelations
 
 pred positionReceptacles
 {
-/*	all r : Receptacle | (r.pos != Entrepot.pos or r = Entrepot) 
-	and*/
 	all r1, r2 : Receptacle | r1.pos != r2.pos or r1 = r2
 }
 
@@ -112,13 +109,14 @@ pred progCarte
 }
 
 //Assertions
-assert NoReceptacleOnEntrepot
+
+/*assert NoReceptacleOnEntrepot
 {
 	progCarte => 
 	all r : Receptacle | r.pos != Entrepot.pos
 	and
 	all r1, r2 : Receptacle | r1 != r2 => r1.pos != r2.pos
-}
+}*/
 
 assert AssertDronePosition
 {

@@ -57,6 +57,19 @@ pred chargeConstante [ d: Drone, t:Time]
 	}
 }
 
+pred chargeReceptacleVide [ r:Receptacle, t:Time]
+{	
+	eq[r.charge.t, Int[0]]
+}
+
+pred chargeReceptacleConstante [ r:Receptacle, t:Time]
+{
+	let t' =t.next
+	{
+		r.charge.t' = r.charge.t
+	}
+}
+
 pred commandeDroneConstante [d:Drone, t:Time]
 {
 	let t'=t.next
@@ -73,26 +86,14 @@ pred commandeEntrepotConstante [d:Drone, t:Time]
 	}
 }
 
-/* Un drone a une capacité DCAP */
-pred chargeDroneMaximum [d:Drone, t:Time]
-{
-	d.charge.t = d.dcap
-}
-
-/* Un réceptacle est un conteneur de capacité RCAP */
-pred chargeReceptacleMaximum [r:Receptacle, t:Time]
-{
-	r.charge.t = r.rcap
-}
-
 /* Un drone prend 1 unité de temps pour recharger sa batterie de 1 unité d'énergie */
 pred chargerBatterie [ d: Drone, t:Time]
 {
 	let t' =t.next
 	{
-		!batteriePleine[d,t] => (d.batterie.t' = add[d.batterie.t, Int[1]]) else batterieConstante[d,t]
+		d.batterie.t' = add[d.batterie.t, Int[1]]
 	}
-	/*chargeConstante[d,t] and */commandeDroneConstante[d,t] and positionConstante[d,t]
+	commandeDroneConstante[d,t] and positionConstante[d,t]
 }
 
 /* Un drone consomme 1 unité d'énergie pour faire 1 pas sur la grille.
@@ -101,9 +102,9 @@ pred dechargerBatterie [ d: Drone, t:Time]
 {
 	let t' =t.next
 	{
-		!batterieVide[d,t]=>(d.batterie.t' = add[d.batterie.t, Int[-1]]) else batterieConstante[d,t]
+		d.batterie.t' = add[d.batterie.t, Int[-1]]
 	}
-	/*chargeConstante[d,t] and */commandeDroneConstante[d,t] 
+	commandeDroneConstante[d,t] 
 }
 
 /* Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */ 
@@ -120,22 +121,18 @@ pred chargerCommande [ d:Drone, t:Time]
 /* Une fois le réceptacle rejoint, l'action de livrer les produits prend 1 unité de temps. */
 pred livrerProduits [ d: Drone, t:Time]
 {	
-//	some r:Receptacle |
-	let t' =t.next
+	some r:Receptacle | r = d.cmd.t.rec and
+   	let t' =t.next
 	{		
-	    #d.cmd.t' = 0 && d.charge.t' = Int[0] 
-		// ( ( add[r.charge.t, d.charge.t] <=  r.rcap )  => ((r.charge.t' = add[r.charge.t, d.charge.t]) && chargeVide[d,t']) else
-		 // ( (r.charge.t' = r.rcap) && (d.charge.t' = sub[d.charge.t, sub[r.rcap, r.charge.t]]) && viderReceptacle[r,t'] ) )
+		( d.charge.t <=  r.rcap )  => (r.charge.t' = add[r.charge.t, d.charge.t] && viderReceptacle[r,t'] && chargeVide[d,t'] && #d.cmd.t' = 0 ) else
+		(r.charge.t' = r.rcap && d.charge.t' = sub[d.charge.t, sub[r.rcap, r.charge.t]] && viderReceptacle[r,t'] && commandeDroneConstante[d,t])
 	}
 	batterieConstante[d,t] && positionConstante[d,t]
 }
 
 pred viderReceptacle [ r:Receptacle, t:Time]
 {	
-	let t'=t.next
-	{
-		chargeReceptacleMaximum[r,t] => (r.charge.t' = Int[0])
-	}	
+	(t != last) => r.charge.t.next = Int[0]
 }
 
 // Entrepot
@@ -162,7 +159,8 @@ pred progEntrepot[d:Drone ,t:Time]
 /* Un drone interagit avec un réceptacle pour y déposer les produits qu'il porte.	*/
 pred LivraisonReceptacle[d: Drone, t:Time] 
 {		
-	surBonReceptacle[d,t] && !chargeVide[d,t] => livrerProduits[d,t] 	
+	some r:Receptacle |	
+	(surBonReceptacle[d,t] && !chargeVide[d,t]) => livrerProduits[d,t] else chargeReceptacleConstante[r,t]			
 }
 
 /*	Un réceptacle lambda permet aussi à un drone de recharger sa batterie. */
@@ -173,8 +171,9 @@ pred BatterieReceptacle[d: Drone, t:Time]
 
 /* Un drone ne peut pas livrer ses produits et recharger sa batterie en même temps */
 pred BatterieBonReceptacle[d:Drone,t:Time]
-{		
-	(surBonReceptacle[d,t] && chargeVide[d,t] && !batteriePleine[d,t] ) => chargerBatterie[d,t]
+{	
+	some r:Receptacle |		
+	(surBonReceptacle[d,t] && chargeVide[d,t] && !batteriePleine[d,t] ) => (chargerBatterie[d,t]	&& chargeReceptacleConstante[r,t])
 }
 
 pred progReceptacle[d:Drone ,t:Time]
@@ -182,11 +181,24 @@ pred progReceptacle[d:Drone ,t:Time]
 	LivraisonReceptacle[d,t] and BatterieReceptacle[d,t] and BatterieBonReceptacle[d,t]
 }
 
+pred progCharges[d:Drone , t:Time]
+{
+	progEntrepot[d,t] and progReceptacle[d,t] 
+}
+
 //Faits :
 
-//c'est un invariant, si un drone porte une commande alors sa charge est egale a celle de la commande 
 fact ChargeCommande
 {
-	all d:Drone, t:Time | #d.cmd.t != 0 => (d.charge.t = #d.cmd.t.produit) else d.charge.t = Int[0]
+	all d:Drone, t:Time-last |	(!chargerCommande[d,t] && !livrerProduits[d,t] ) => chargeConstante[d,t]
+}
 
+/*fact ChargeBonReceptacle
+{
+	all r:Receptacle, t:Time-last | some d:Drone |(r = d.cmd.t.rec && !surBonReceptacle[d,t] && surBonReceptacle[d,t.next]) => chargeReceptacleConstante[r,t]
+}*/
+
+fact ChargeReceptacle
+{
+	all r:Receptacle, d:Drone, t:Time-last | (r != d.cmd.t.rec) => chargeReceptacleConstante[r,t ]
 }

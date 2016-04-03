@@ -5,19 +5,17 @@ open charges2
 //Prédicats
 pred init [t:Time]
 {
-	all d : Drone, r:Receptacle | d.pos.t = Entrepot.pos 
-	&& d.batterie.t = Int[1] 
-	&& d.charge.t =Int[0] 
-	&& r.charge.t = Int[0] 
+	all d : Drone, r:Receptacle | surEntrepot[d,t]
+	&& batteriePleine[d,t]
+	&& chargeVide[d,t]
+	&& chargeReceptacleVide[r,t]
 	&& #d.cmd.t = 0 
 	&& Entrepot.currentCmd.t = first
 }
 
 pred interdictionSaut  [t, t': Time, d: Drone]
 {
-	// enlevé: si on a livré et qu'on veut retourner à l'entrepot
-	/*#d.cmd.t = 0 => d.pos.t' = d.pos.t else*/
-	(d.pos.t' = d.pos.t.nord or d.pos.t' = d.pos.t.est or d.pos.t' = d.pos.t.sud or d.pos.t' = d.pos.t.ouest or positionConstante[d,t])
+	d.pos.t' = d.pos.t.nord or d.pos.t' = d.pos.t.est or d.pos.t' = d.pos.t.sud or d.pos.t' = d.pos.t.ouest or positionConstante[d,t]
 }
 
 
@@ -37,8 +35,7 @@ pred progTemps
     all t: Time-last | let t' = t.next
     {
 		all d : Drone |  interdictionSaut[t, t', d] 
-		and progEntrepot[d,t] 
-		and progReceptacle[d,t] 
+		and progCharges[d,t]
 		and ((!surEntrepot[d,t] && !surReceptacle[d,t] && !surBonReceptacle[d,t] && !batterieVide[d,t] ) =>  moveDrone [t, t', d]) 
 		and ((!chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] ) =>  moveDrone [t, t', d]) 
 		and (( batteriePleine[d,t] && (surReceptacle[d,t] || surBonReceptacle[d,t])) => moveDrone [t, t', d])

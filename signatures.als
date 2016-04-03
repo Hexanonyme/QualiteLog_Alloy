@@ -11,8 +11,7 @@ sig Position
 	sud : lone Position,
 	ouest : lone Position,
 	x : Int,
-	y : Int,
-	isReceptacle : Int
+	y : Int
 }
 
 one sig TopLeft extends Position {}
@@ -34,7 +33,7 @@ sig Receptacle
 {	
 	pos: one Position,
 	charge : Int one -> Time,
-	rcap: Int[5] // valeur à revoir
+	rcap: Int[2] // valeur à revoir
 }
 
 sig Drone 
