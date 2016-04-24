@@ -1,220 +1,188 @@
-//open signatures
+open signatures
 
 //Prédicats :
 
-
-pred init [t:Time]
-{
-	all d : Drone, e:Entrepot, r:Receptacle | d.pos.t = e.pos && d.batterie.t = Int[1] && d.charge.t =Int[0] && r.charge.t = Int[5] && e.charge.t = Int[5]
-}
-
-
 pred surEntrepot [ d:Drone, t:Time] 
 {
-	some e:Entrepot | d.pos.t = e.pos
+	d.pos.t = Entrepot.pos 
 }
 
 pred surReceptacle [ d:Drone , t:Time]
 {
-	some r:Receptacle | d.pos.t = r.pos
+	some r:Receptacle | (d.pos.t = r.pos) && !surBonReceptacle[d,t]
 }
-
 
 pred surBonReceptacle [ d:Drone , t:Time]
 {
-	d.pos.t = d.cmd.t.rec.pos
+	d.pos.t = d.cmd.t.rec.pos 
 }
 
-pred enDeplacement [ d:Drone, t:Time]
+pred positionConstante [ d:Drone, t:Time]
 {
-	t=last ||
-	let t'=t.next
+	let t' =t.next
 	{
-		d.pos.t' != d.pos.t
+		d.pos.t' = d.pos.t
 	}
 }
-	
 
+ /* La capacité de la batterie d'un drone est de 3 unités d'énergie */	
 pred batteriePleine [d:Drone, t:Time]
 {
-	d.batterie.t = Int[3]
+	eq[d.batterie.t, Int[3]]
 }
 
+pred batterieVide [d:Drone, t:Time]
+{
+	eq[d.batterie.t, Int[0]]
+}
 
-/* Un drone prend 1 unité de temps pour recharger sa batterie de 1 unité d'énergie */
+pred batterieConstante [ d: Drone, t:Time]
+{
+	let t' =t.next
+	{
+		d.batterie.t' = d.batterie.t
+	}
+}
+
 pred chargeVide [ d:Drone, t:Time]
 {	
-	d.charge.t = Int[0]
+	eq[d.charge.t, Int[0]]
+}
+
+pred chargeConstante [ d: Drone, t:Time]
+{
+	let t' =t.next
+	{
+		d.charge.t' = d.charge.t
+	}
+}
+
+pred commandeDroneConstante [d:Drone, t:Time]
+{
+	let t'=t.next
+	{
+		d.cmd.t = d.cmd.t'
+	}
+}
+
+pred commandeEntrepotConstante [d:Drone, t:Time]
+{
+	let t'=t.next
+	{
+		Entrepot.currentCmd.t = Entrepot.currentCmd.t'
+	}
+}
+
+pred commandeDejaChargee [d:Drone, t:Time]
+{
+	let t' = t.next
+	{
+		some d1 : Drone | d1 != d &&  d1.cmd.t' =  Entrepot.currentCmd.t 
+	}
 }
 
 /* Un drone prend 1 unité de temps pour recharger sa batterie de 1 unité d'énergie */
 pred chargerBatterie [ d: Drone, t:Time]
 {
-	t=last ||
 	let t' =t.next
 	{
 		d.batterie.t' = add[d.batterie.t, Int[1]]
-	}	
+	}
+	commandeDroneConstante[d,t] and positionConstante[d,t]
 }
 
 /* Un drone consomme 1 unité d'énergie pour faire 1 pas sur la grille.
 	Un drone prend 1 unité de temps pour se déplacer de 1 pas sur la grille.*/
 pred dechargerBatterie [ d: Drone, t:Time]
 {
-	t=last ||
 	let t' =t.next
 	{
 		d.batterie.t' = add[d.batterie.t, Int[-1]]
-	}	
-}
-
-//Faits :
-pred batterieConstante [ d: Drone, t:Time]
-{
-	t=last ||
-	let t' =t.next
-	{
-		d.batterie.t' = d.batterie.t
-	}	
-}
-
-pred chargeConstante [ d: Drone, t:Time]
-{
-	t=last ||
-	let t' =t.next
-	{
-		d.charge.t' = d.charge.t
-	}	
-}
-
-/* Une fois le réceptacle rejoint, l'action de livrer les produits prend 1 unité de temps. */
-pred livrerProduits [ d: Drone, t:Time]
-{
-	t=last ||
-	let t'=t.next
-	{
-		d.charge.t' = Int[0]
 	}
+	commandeDroneConstante[d,t] 
 }
 
 /* Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */ 
 pred chargerCommande [ d:Drone, t:Time]
 {
-	t=last ||
-	let t'=t.next
+	let t' =t.next
 	{
-		d.charge.t' = Int[4]
+	 	d.cmd.t'= Entrepot.currentCmd.t && d.charge.t' = #d.cmd.t'.produit &&
+		(( Entrepot.currentCmd.t != last) => ( Entrepot.currentCmd.t'= next[Entrepot.currentCmd.t]) else (#Entrepot.currentCmd.t'=0))
 	}
+	batterieConstante[d,t] and positionConstante[d,t]
 }
 
-pred peutBouger{}
-
-//Faits :
-
-
-
- /* La capacité de la batterie d'un drone est de 3 unités d'énergie */
-fact capaciteBatterie
-{
-	all d : Drone, t : Time | d.batterie.t >= Int[0] && d.batterie.t <= Int[3]
-}
-
-/* Un drone a une capacité DCAP */
-fact chargeDroneMaximum
-{
-	all d : Drone, c : Capacite, t : Time | ( (d.charge.t <= c.dcap) && (d.charge.t >= 0) )
-}
-
-/* Un réceptacle est un conteneur de capacité RCAP */
-fact chargeReceptacleMaximum
-{
-	all r : Receptacle, c : Capacite, t : Time | ( (r.charge.t <= c.rcap) && (r.charge.t >= 0) )
-}
-
-/* Un drone peut recharger sa batterie au niveau de l'entrepôt.
-	Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */ 
-fact DroneEntrepot 
+/* Une fois le réceptacle rejoint, l'action de livrer les produits prend 1 unité de temps. */
+pred livrerProduits [ d: Drone, t:Time]
 {	
-//	init[first]
-	all d : Drone, t :Time | (surEntrepot[d,t] && !batteriePleine[d,t]) => ( chargerBatterie[d,t] && surEntrepot[d,t.next])										
+   	let t' =t.next
+	{		
+		chargeVide[d,t'] && #d.cmd.t' = 0
+	}
+	batterieConstante[d,t] && positionConstante[d,t]
 }
 
-fact DroneDeplacement
-{	
-	all d : Drone, t :Time | enDeplacement[d,t] => dechargerBatterie[d,t]
-}
-
-//Assertions :
-
-/* Un drone interagit avec un réceptacle pour y déposer les produits qu'il porte.	
-	Un réceptacle permet aussi à un drone de recharger sa batterie. */
-assert DroneReceptacle 
-{		
-	all d : Drone, t :Time | surReceptacle[d,t] => chargerBatterie[d,t]
-}
-
-// Entrepot 
+// Entrepot
 
 /* Un drone peut recharger sa batterie au niveau de l'entrepôt. */	
-fact BatterieEntrepot 
-{		
-	all d : Drone, t :Time| (surEntrepot[d,t] && chargeVide[d,t] && !batteriePleine[d,t]) => ( chargerBatterie[d,t] && !enDeplacement[d,t] && chargeConstante[d,t])										
+pred batterieEntrepot[d: Drone, t:Time] 
+{
+	(surEntrepot[d,t] && chargeVide[d,t] && !batteriePleine[d,t]) =>  chargerBatterie[d,t] 					
 }
 
-fact ChargementEntrepot 
+/*	Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */
+pred chargementEntrepot[d: Drone, t:Time]
 {
-	all d:Drone, t:Time| (chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t]) => chargerCommande[d,t] && !enDeplacement[d,t] && batterieConstante[d,t]
+	(chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] && !commandeDejaChargee[d,t]) => chargerCommande[d,t]
+	else (batterieConstante[d,t] and positionConstante[d,t]) //commandeEntrepotConstante[d,t]
 }
 
-fact QuitterEntrepot
+pred progEntrepot[d:Drone ,t:Time]
 {
-	all d:Drone, t:Time| ((peutBouger && !chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t]) => (enDeplacement[d,t] && chargeConstante[d,t])) &&
-																		((!peutBouger && !chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t]) => (!enDeplacement[d,t] && chargeConstante[d,t] && batterieConstante[d,t] ))
+	batterieEntrepot[d,t] and chargementEntrepot[d,t] 
 }
 
 // Receptacle
 
 /* Un drone interagit avec un réceptacle pour y déposer les produits qu'il porte.	*/
-fact LivraisonReceptacle 
+pred livraisonReceptacle[d: Drone, t:Time] 
 {		
-	all d : Drone, t :Time |  (surBonReceptacle[d,t] && !chargeVide[d,t] )=> ( livrerProduits[d,t] && !enDeplacement[d,t] && batterieConstante[d,t] )
+	(surBonReceptacle[d,t] && !chargeVide[d,t]) => livrerProduits[d,t] 	
 }
 
-/*	Un réceptacle permet aussi à un drone de recharger sa batterie. */
-fact BatterieReceptacle 
+/*	Un réceptacle lambda permet aussi à un drone de recharger sa batterie. */
+pred batterieReceptacle[d: Drone, t:Time] 
 {		
-	all d : Drone, t :Time | (surReceptacle[d,t]  && !batteriePleine[d,t] ) => (chargerBatterie[d,t] && !enDeplacement[d,t]&& chargeConstante[d,t])
+	(surReceptacle[d,t]  && !batteriePleine[d,t] ) => chargerBatterie[d,t] 
 }
-
-/*	Un réceptacle permet aussi à un drone de recharger sa batterie. */
-fact BatterieBonReceptacle 
-{		
-	all d : Drone, t :Time | (surBonReceptacle[d,t] && chargeVide[d,t] && !batteriePleine[d,t] ) => (chargerBatterie[d,t] && !enDeplacement[d,t] && chargeConstante[d,t])
-}
-
-fact QuitterReceptacle 
-{		
-	all d : Drone, t :Time | ((peutBouger && batteriePleine[d,t] && surReceptacle[d,t]) =>  (enDeplacement[d,t] && chargeConstante[d,t])) &&
-											((!peutBouger && batteriePleine[d,t] && surReceptacle[d,t]) =>  (!enDeplacement[d,t] && batterieConstante[d,t] && chargeConstante[d,t]))
-}
-
-fact DroneDeplacement
-{	
-	init[first]	
-	all d : Drone, t :Time |  (enDeplacement[d,t] => dechargerBatterie[d,t] && chargeConstante[d,t]) &&									
-											((!enDeplacement[d,t] && !surEntrepot[d,t] && !surReceptacle[d,t] )=> batterieConstante[d,t] && chargeConstante[d,t] )
-}
-
-
-//Assertions :
 
 /* Un drone ne peut pas livrer ses produits et recharger sa batterie en même temps */
-assert NoLivraisonBatterie
-{
-	all d : Drone | no t :Time | livrerProduits[d,t] && chargerBatterie[d,t]
+pred batterieBonReceptacle[d:Drone,t:Time]
+{	
+	(surBonReceptacle[d,t] && chargeVide[d,t] && !batteriePleine[d,t] ) => chargerBatterie[d,t]
 }
 
-fact SortirDeEntrepot
+pred progReceptacle[d:Drone ,t:Time]
 {
-	all d:Drone, t:Time | (batteriePleine[d,t] && surEntrepot[d,t]) => enDeplacement[d,t.next] 
+	livraisonReceptacle[d,t] and batterieReceptacle[d,t] and batterieBonReceptacle[d,t]
+}
+
+pred progCharges[d:Drone , t:Time]
+{
+	progEntrepot[d,t] and progReceptacle[d,t] 
+}
+
+//Faits :
+
+// Le nombre de produits d'une commande ne doit pas dépasser dcap et rcap 
+fact NombreProduits
+{
+	all d : Drone, r : Receptacle, c : Commande | (#c.produit <= d.dcap) && (#c.produit <=r.rcap)
+}
+
+// La charge d'un drone doit rester constante à part quand il charge la commande ou quand il livre des produits 
+fact ChargeCommande
+{
+	all d:Drone, t:Time-last |	(!chargerCommande[d,t] && !livrerProduits[d,t] ) => chargeConstante[d,t]
 }

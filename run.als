@@ -2,37 +2,20 @@ open signatures
 open carte
 open temps
 
-pred prog 
-{
-	progCarte and progTemps
-}
-
-pred go{ prog }
-run go for 4 but exactly 20 Time, exactly 1 Drone, exactly 4 Position, exactly 3 Commande, exactly 2 Receptacle
-
-
-assert  a
-{
-	prog => all p : Position | Entrepot.pos = p
-}
-check a  for 4 but exactly 15 Time, exactly 1 Drone
+run progTemps for 10 but exactly 10 Time, exactly 2 Drone, exactly 6 Position, exactly 3 Commande, exactly 3 Receptacle
 
 /* Cindy: 
 
-Problème réglé sur les commandes: elles s'enchaînent correctement et un drone ne reprend jamais la même commande 
-=> une fois que toutes les commandes ont été livrées, le drone retourne à l'entrepot, se recharge en batterie et ne fait plus rien
-
-Cas traité d'une commande qui a plus de produits que la capacité du receptacle : on livre en 2 fois avec un vidage du receptacle entre temps
-==> la charge des receptacles est bien fixée sauf quand un drone arrive sur le receptacle de sa commande ==> la valeur change alors qu'elle doit être constante 
-==> il faudrait faire marcher le fact ChargeBonReceptacle dans charges2
+-Le doc charges2.als a été renommé charges.als
+-J'ai décidé de faire une simplification en rajoutant le fact NombreProduits dans charges : le nombre de produits d'une commande ne dépasse pas la charge d'un drone ou d'un réceptacle (donc on n'a plus besoin de la charge en temps réel d'un réceptacle)
+-J'ai transformé le prédicat progCarte en fact => plus logique non ? A voir
+-j'ai rajouté des assert qui sont valides et commentés dans charges, temps et carte
+-on reste sur notre idée où on charge la batterie au max à chaque fois et on utilise la distance de manhattan
+-on reste sur un nombre de commandes fixes à l'entrepôt au départ
 
 A faire : 
-	- cas où un drone est bloqué à un endroit car les positions suivantes sont occupées => bien fixer tous les trucs qui doivent rester constants
-	- cas où il y a plus de produits que la capacité de l'entrepot
-	- sûrement plein d'autres choses ...	
-
-NB: j'ai supprimé tous les trucs commentés dont j'étais (presque) sûre qu'ils étaient devenus inutiles
-==>Si par mégarde j'ai effacé un truc important pour vous, désolée et vous pouvez le récupérer sur les anciennes versions git
+	- cas où plusieurs drones en même temps => pb car les 2 drones prennent la même commande
+	- cas où un drone est bloqué à un endroit car les positions suivantes sont occupées => il se passe quoi ? cas traité ?
 
 */
 	

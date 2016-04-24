@@ -1,14 +1,13 @@
 open signatures
 open carte
-open charges2
+open charges
 
 //Prédicats
 pred init [t:Time]
 {
-	all d : Drone, r:Receptacle | surEntrepot[d,t]
+	all d : Drone | surEntrepot[d,t]
 	&& batteriePleine[d,t]
 	&& chargeVide[d,t]
-	&& chargeReceptacleVide[r,t]
 	&& #d.cmd.t = 0 
 	&& Entrepot.currentCmd.t = first
 }
@@ -62,3 +61,66 @@ fun destination [d: Drone, t : Time] : Position
 {
 	#d.cmd.t= 1 => d.cmd.t.rec.pos else Entrepot.pos
 }
+
+//Assertions
+
+// Le nombre de produits d'une commande ne doit pas dépasser dcap ou rcap 
+// ==> vrai grâce au fact NombreProduits
+assert  NonDepassementCharge
+{
+	progTemps => ( all d : Drone, r : Receptacle | no c : Commande| (#c.produit > d.dcap) || (#c.produit > r.rcap) )
+}
+check NonDepassementCharge
+
+// Une commande ne doit pas être vide
+assert  CommandeNonVide
+{
+	progTemps => ( no c : Commande| #c.produit = 0 )
+}
+check CommandeNonVide
+
+// La batterie ne doit pas être supérieure à 3 
+// ==> vrai grâce à la condition !batteriePleine à chaque fois qu'on fait chargerBatterie
+assert BatterieMax
+{
+	all  t : Time |
+	progTemps=> (no d : Drone | d.batterie.t > Int[3] )
+}
+check BatterieMax
+
+// La batterie ne doit jamais être vide (ou négative évidemment) 
+// ==> vrai grâce à la condition !batterieVide quand on fait moveDrone (et donc dechargerBatterie)
+assert BatterieNonVide
+{
+	all  t : Time|
+	progTemps=> (no d : Drone | d.batterie.t <= Int[0] )
+}
+check BatterieNonVide
+
+// La charge d'un drone doit toujours être égale au nombre de produits de sa commande, s'il en a une 
+// ==> vrai grâce au fact ChargeConstante
+assert ChargeDrone
+{
+	all t : Time|
+	progTemps=> ( no d : Drone | d.charge.t != #d.cmd.t.produit )
+}
+check ChargeDrone
+
+// Un drone ne peut pas livrer ses produits et recharger sa batterie en même temps (sur le réceptacle de sa commande)
+// ==> vrai grâce à la condition chargeVide (si !chargeVide, on livre et puis quand chargeVide, on recharge la batterie)
+assert NonLivraisonBatterie
+{
+	all t : Time-last |
+	progTemps=> no d : Drone | livrerProduits[d,t] && chargerBatterie[d,t]
+}
+check NonLivraisonBatterie
+
+
+// Un drone ne peut pas charger une commande et recharger sa batterie en même temps (à l'entrepôt)
+// ==> vrai grâce à la condition batteriePleine (si !batteriePleine, on recharge la batterie et puis quand batteriePleine, on charge la commande)
+assert NonCommandeBatterie
+{
+	all t : Time-last |
+	progTemps=> no d : Drone | chargerCommande[d,t] && chargerBatterie[d,t]
+}
+check NonCommandeBatterie

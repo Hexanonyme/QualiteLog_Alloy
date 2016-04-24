@@ -1,7 +1,24 @@
 open signatures
 
-//Faits
-fact 
+//Fonctions
+
+fun manhattan [p1, p2 : Position ] : Int
+{
+		add [
+			sub[
+				larger  [p2.x, p1.x], 
+				smaller [p2.x, p1.x]
+			],	
+			sub[
+				larger  [p2.y, p1.y], 
+				smaller [p2.y, p1.y]
+			]
+		]
+}
+
+//Prédicats
+
+pred init 
 {
 	TopLeft.nord = none
 	TopRight.nord = none
@@ -20,21 +37,6 @@ fact
 	#BottomLeft.est = 1
 	#TopLeft.est = 1
 	(Commande -> Receptacle).Receptacle = Entrepot.cmdALivrer
-}
-
-//Fonctions
-fun manhattan [p1, p2 : Position ] : Int
-{
-		add [
-			sub[
-				larger  [p2.x, p1.x], 
-				smaller [p2.x, p1.x]
-			],	
-			sub[
-				larger  [p2.y, p1.y], 
-				smaller [p2.y, p1.y]
-			]
-		]
 }
 
 pred positionRelations
@@ -83,7 +85,9 @@ pred positionRelations
 
 pred positionReceptacles
 {
-	all r1, r2 : Receptacle | r1.pos != r2.pos or r1 = r2
+	all r : Receptacle | r.pos != Entrepot.pos
+	and
+	all r1, r2 : Receptacle | r1 != r2 => r1.pos != r2.pos 
 }
 
 // A un instant t, au plus drone peut interagir avec un réceptacle
@@ -91,41 +95,64 @@ pred positionReceptacles
 // A un instant t, il y a au plus un drone à chaque intersection de la grille
 pred positionDrones
 {
-	all d1, d2 : Drone, t:Time | d1.pos.t != d2.pos.t or d1 = d2 or (d1.pos.t = Entrepot.pos and d2.pos.t = Entrepot.pos)
+	all d1, d2 : Drone, t:Time | d1 != d2 => (d1.pos.t != d2.pos.t or (d1.pos.t = Entrepot.pos and d2.pos.t = Entrepot.pos))
 }
-
 
 // Il existe au moins un receptacle voisin de l'entrepot 
 // +
 // La distance entre tout couple d'élément consécutif de ce chemin doit être inférieur au égale à trois
 pred eloignementReceptacle
 {
+	some r : Receptacle | eq[manhattan[r.pos, Entrepot.pos], Int[1]]
+	and
 	all r1, r2 : Receptacle | r1 != r2 => lte [manhattan[r1.pos, r2.pos], Int[3]]
 }
 
-pred progCarte
+//Faits
+
+fact ProgCarte
 {
-	positionRelations and positionReceptacles and positionDrones and eloignementReceptacle
+	init and positionRelations and positionReceptacles and positionDrones and eloignementReceptacle
 }
 
 //Assertions
 
-/*assert NoReceptacleOnEntrepot
+// Un réceptacle ne doit pas être sur l'entrepôt
+// ==> vrai grâce à positionReceptacles
+assert NoReceptacleOnEntrepot
 {
-	progCarte => 
-	all r : Receptacle | r.pos != Entrepot.pos
-	and
-	all r1, r2 : Receptacle | r1 != r2 => r1.pos != r2.pos
-}*/
-
-assert AssertDronePosition
-{
-	progCarte => 
-	all d1, d2 : Drone, t:Time | d1 != d2 =>d1.pos.t != d2.pos.t  or (d1.pos.t = Entrepot.pos and d2.pos.t = Entrepot.pos)
+	no r : Receptacle | r.pos = Entrepot.pos
 }
+check NoReceptacleOnEntrepot
 
-assert AssertPositionReceptacle
+// Deux réceptacles ne doivent pas avoir la même position
+// ==> vrai grâce à positionReceptacles
+assert DeuxReceptaclesPositions
 {
-	progCarte => 
-	all r1, r2 : Receptacle | r1 != r2 => lte [manhattan[r1.pos, r2.pos], Int[3]]
+	no r1, r2 : Receptacle | r1 != r2 and r1.pos = r2.pos
 }
+check DeuxReceptaclesPositions
+
+// Deux drones ne doivent pas avoir la même position, sauf sur l'entrepôt
+// ==> vrai grâce à positionDrones
+assert DeuxDronesPositions
+{
+	all t : Time | no d1, d2 : Drone | (d1 != d2 and d1.pos.t = d2.pos.t and d1.pos.t != Entrepot.pos and d2.pos.t != Entrepot.pos)
+}
+check DeuxDronesPositions
+
+// La distance entre tout couple d'élément consécutif de ce chemin ne doit pas être supérieur à 3
+// ==> vrai grâce à eloignementReceptacle
+assert PositionReceptacle
+{
+	no r1, r2 : Receptacle | (r1 != r2 and manhattan[r1.pos, r2.pos] > Int[3] )
+}
+check PositionReceptacle
+
+// Il existe au moins un receptacle voisin de l'entrepot
+// ==> vrai grâce à eloignementReceptacle 
+assert VoisinEntrepot
+{
+	some r : Receptacle |  eq[manhattan[r.pos, Entrepot.pos],Int[1]]
+}
+check VoisinEntrepot
