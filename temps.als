@@ -64,45 +64,21 @@ fun destination [d: Drone, t : Time] : Position
 
 //Assertions
 
-// Le nombre de produits d'une commande ne doit pas dépasser dcap ou rcap 
-// ==> vrai grâce au fact NombreProduits
-assert  NonDepassementCharge
-{
-	progTemps => ( all d : Drone, r : Receptacle | no c : Commande| (#c.produit > d.dcap) || (#c.produit > r.rcap) )
-}
-check NonDepassementCharge
-
-// Une commande ne doit pas être vide
-assert  CommandeNonVide
-{
-	progTemps => ( no c : Commande| #c.produit = 0 )
-}
-check CommandeNonVide
-
-// La batterie ne doit pas être supérieure à 3 
-// ==> vrai grâce à la condition !batteriePleine à chaque fois qu'on fait chargerBatterie
-assert BatterieMax
+// La batterie ne doit pas être supérieure à 3 ou être vide (ou négative évidemment) 
+// ==> vrai grâce à la condition !batteriePleine à chaque fois qu'on fait chargerBatterie  et à !batterieVide quand on fait moveDrone (et donc dechargerBatterie)
+assert Batterie
 {
 	all  t : Time |
-	progTemps=> (no d : Drone | d.batterie.t > Int[3] )
+	progTemps=> (all d : Drone | d.batterie.t <= Int[3] && d.batterie.t > Int[0] )
 }
-check BatterieMax
-
-// La batterie ne doit jamais être vide (ou négative évidemment) 
-// ==> vrai grâce à la condition !batterieVide quand on fait moveDrone (et donc dechargerBatterie)
-assert BatterieNonVide
-{
-	all  t : Time|
-	progTemps=> (no d : Drone | d.batterie.t <= Int[0] )
-}
-check BatterieNonVide
+check Batterie
 
 // La charge d'un drone doit toujours être égale au nombre de produits de sa commande, s'il en a une 
 // ==> vrai grâce au fact ChargeConstante
 assert ChargeDrone
 {
 	all t : Time|
-	progTemps=> ( no d : Drone | d.charge.t != #d.cmd.t.produit )
+	progTemps=> ( all d : Drone | d.charge.t = #d.cmd.t.produit )
 }
 check ChargeDrone
 
@@ -111,16 +87,53 @@ check ChargeDrone
 assert NonLivraisonBatterie
 {
 	all t : Time-last |
-	progTemps=> no d : Drone | livrerProduits[d,t] && chargerBatterie[d,t]
+	progTemps=> ( no d : Drone | livrerProduits[d,t] && chargerBatterie[d,t] )
 }
 check NonLivraisonBatterie
-
 
 // Un drone ne peut pas charger une commande et recharger sa batterie en même temps (à l'entrepôt)
 // ==> vrai grâce à la condition batteriePleine (si !batteriePleine, on recharge la batterie et puis quand batteriePleine, on charge la commande)
 assert NonCommandeBatterie
 {
 	all t : Time-last |
-	progTemps=> no d : Drone | chargerCommande[d,t] && chargerBatterie[d,t]
+	progTemps=> ( no d : Drone | chargerCommande[d,t] && chargerBatterie[d,t] )
 }
 check NonCommandeBatterie
+
+// Deux drones ne doivent pas avoir la même position, sauf sur l'entrepôt
+// ==> vrai grâce à positionDrones
+assert DeuxDronesPositions
+{
+	all t : Time, d1,d2 : Drone |
+	progTemps => ( d1 != d2 =>  d1.pos.t != d2.pos.t or (d1.pos.t = Entrepot.pos and d2.pos.t = Entrepot.pos))
+}
+check DeuxDronesPositions
+
+// La distance entre tout couple d'élément consécutif d'un chemin ne doit pas être supérieur à 3
+// ==> vrai grâce à eloignementReceptacle
+assert PositionReceptacle
+{
+	all r1, r2 : Receptacle |
+	progTemps => (	r1 != r2 => manhattan[r1.pos, r2.pos] <= Int[3] )
+}
+check PositionReceptacle
+
+/*
+
+// Une commande ne peut être chargée que par un seul drone
+assert NonMemeCommande
+{
+	all t:Time, d1,d2 : Drone |
+	progTemps => (d1 != d2 => d1.cmd.t != d2.cmd.t )
+}
+check NonMemeCommande
+
+// Une commande ne peut être livrée qu'une seule fois
+assert CommandeLivraisonUnique
+{
+	all t:Time, d:Drone |
+	progTemps => ( d.cmd.t != Entrepot.currentCmd.t )
+}
+check CommandeLivraisonUnique
+
+*/

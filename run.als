@@ -2,7 +2,9 @@ open signatures
 open carte
 open temps
 
-run progTemps for 10 but exactly 10 Time, exactly 2 Drone, exactly 6 Position, exactly 3 Commande, exactly 3 Receptacle
+run progTemps for 5 but exactly 20 Time, exactly 1 Drone, exactly 3 Commande
+
+run progTemps for 5 but exactly 2 Time, exactly 2 Drone
 
 /* Cindy: 
 
@@ -14,8 +16,8 @@ run progTemps for 10 but exactly 10 Time, exactly 2 Drone, exactly 6 Position, e
 -on reste sur un nombre de commandes fixes à l'entrepôt au départ
 
 A faire : 
-	- cas où plusieurs drones en même temps => pb car les 2 drones prennent la même commande
+	- cas où plusieurs drones en même temps => pb car les 2 drones prennent la même commande, je n'arrive pas à différencier 2 drones (les asserts commentés ne veulent donc rien dire et mon idée du prédicat commandeDejaChargee marche pas non plus)
 	- cas où un drone est bloqué à un endroit car les positions suivantes sont occupées => il se passe quoi ? cas traité ?
-
+	
 */
 	

@@ -121,7 +121,7 @@ fact ProgCarte
 // ==> vrai grâce à positionReceptacles
 assert NoReceptacleOnEntrepot
 {
-	no r : Receptacle | r.pos = Entrepot.pos
+	all r : Receptacle | r.pos != Entrepot.pos
 }
 check NoReceptacleOnEntrepot
 
@@ -129,25 +129,9 @@ check NoReceptacleOnEntrepot
 // ==> vrai grâce à positionReceptacles
 assert DeuxReceptaclesPositions
 {
-	no r1, r2 : Receptacle | r1 != r2 and r1.pos = r2.pos
+	all r1, r2 : Receptacle | r1 != r2 => r1.pos != r2.pos
 }
 check DeuxReceptaclesPositions
-
-// Deux drones ne doivent pas avoir la même position, sauf sur l'entrepôt
-// ==> vrai grâce à positionDrones
-assert DeuxDronesPositions
-{
-	all t : Time | no d1, d2 : Drone | (d1 != d2 and d1.pos.t = d2.pos.t and d1.pos.t != Entrepot.pos and d2.pos.t != Entrepot.pos)
-}
-check DeuxDronesPositions
-
-// La distance entre tout couple d'élément consécutif de ce chemin ne doit pas être supérieur à 3
-// ==> vrai grâce à eloignementReceptacle
-assert PositionReceptacle
-{
-	no r1, r2 : Receptacle | (r1 != r2 and manhattan[r1.pos, r2.pos] > Int[3] )
-}
-check PositionReceptacle
 
 // Il existe au moins un receptacle voisin de l'entrepot
 // ==> vrai grâce à eloignementReceptacle 
@@ -155,4 +139,4 @@ assert VoisinEntrepot
 {
 	some r : Receptacle |  eq[manhattan[r.pos, Entrepot.pos],Int[1]]
 }
-check VoisinEntrepot
+check VoisinEntrepot 

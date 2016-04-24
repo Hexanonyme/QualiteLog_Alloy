@@ -73,11 +73,11 @@ pred commandeEntrepotConstante [d:Drone, t:Time]
 	}
 }
 
-pred commandeDejaChargee [d:Drone, t:Time]
+pred commandeDejaChargee [d1:Drone, d2:Drone, t:Time]
 {
 	let t' = t.next
 	{
-		some d1 : Drone | d1 != d &&  d1.cmd.t' =  Entrepot.currentCmd.t 
+		d1 != d2 &&  d2.cmd.t' =  Entrepot.currentCmd.t 
 	}
 }
 
@@ -88,7 +88,7 @@ pred chargerBatterie [ d: Drone, t:Time]
 	{
 		d.batterie.t' = add[d.batterie.t, Int[1]]
 	}
-	commandeDroneConstante[d,t] and positionConstante[d,t]
+	positionConstante[d,t]
 }
 
 /* Un drone consomme 1 unité d'énergie pour faire 1 pas sur la grille.
@@ -99,7 +99,6 @@ pred dechargerBatterie [ d: Drone, t:Time]
 	{
 		d.batterie.t' = add[d.batterie.t, Int[-1]]
 	}
-	commandeDroneConstante[d,t] 
 }
 
 /* Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */ 
@@ -134,8 +133,8 @@ pred batterieEntrepot[d: Drone, t:Time]
 /*	Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */
 pred chargementEntrepot[d: Drone, t:Time]
 {
-	(chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] && !commandeDejaChargee[d,t]) => chargerCommande[d,t]
-	else (batterieConstante[d,t] and positionConstante[d,t]) //commandeEntrepotConstante[d,t]
+	some d2 : Drone |
+	(chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] && !commandeDejaChargee[d,d2,t] ) => chargerCommande[d,t]
 }
 
 pred progEntrepot[d:Drone ,t:Time]
@@ -182,7 +181,38 @@ fact NombreProduits
 }
 
 // La charge d'un drone doit rester constante à part quand il charge la commande ou quand il livre des produits 
-fact ChargeCommande
+fact ChargeDroneConstante
 {
 	all d:Drone, t:Time-last |	(!chargerCommande[d,t] && !livrerProduits[d,t] ) => chargeConstante[d,t]
 }
+
+// La commande d'un drone doit rester la même à part quand il charge une commande ou quand il livre des produits 
+fact CommandeDroneConstante
+{
+	all d:Drone, t:Time-last |	(!chargerCommande[d,t] && !livrerProduits[d,t] ) => commandeDroneConstante[d,t]
+}
+
+// La commande courante de l'entrepôt doit rester la même à part quand une commande est chargée 
+fact CommandeEntrepotConstante
+{
+	all d:Drone, t:Time-last |	!chargerCommande[d,t]  => commandeEntrepotConstante[d,t]
+}
+
+//Assertions
+
+// Le nombre de produits d'une commande ne doit pas dépasser dcap ou rcap 
+// ==> vrai grâce au fact NombreProduits
+assert  NonDepassementCharge
+{
+	all d : Drone, r:Receptacle, t : Time |
+	progCharges[d,t] => (all c : Commande| (#c.produit <= d.dcap) && (#c.produit <= r.rcap) )
+}
+check NonDepassementCharge
+
+// Une commande ne doit pas être vide
+assert  CommandeNonVide
+{
+	all d : Drone, t : Time |
+	progCharges[d,t] => ( all c : Commande| #c.produit != 0 )
+}
+check CommandeNonVide
