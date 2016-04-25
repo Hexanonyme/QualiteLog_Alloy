@@ -73,14 +73,6 @@ pred commandeEntrepotConstante [d:Drone, t:Time]
 	}
 }
 
-pred commandeDejaChargee [d1:Drone, d2:Drone, t:Time]
-{
-	let t' = t.next
-	{
-		d1 != d2 &&  d2.cmd.t' =  Entrepot.currentCmd.t 
-	}
-}
-
 /* Un drone prend 1 unité de temps pour recharger sa batterie de 1 unité d'énergie */
 pred chargerBatterie [ d: Drone, t:Time]
 {
@@ -133,8 +125,7 @@ pred batterieEntrepot[d: Drone, t:Time]
 /*	Les commandes sont gérées au niveau de l'entrepôt qui les reçoit par internet */
 pred chargementEntrepot[d: Drone, t:Time]
 {
-	some d2 : Drone |
-	(chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] && !commandeDejaChargee[d,d2,t] ) => chargerCommande[d,t]
+	(chargeVide[d,t] && batteriePleine[d,t] && surEntrepot[d,t] ) => chargerCommande[d,t]
 }
 
 pred progEntrepot[d:Drone ,t:Time]

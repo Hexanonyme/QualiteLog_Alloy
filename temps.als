@@ -118,8 +118,6 @@ assert PositionReceptacle
 }
 check PositionReceptacle
 
-/*
-
 // Une commande ne peut être chargée que par un seul drone
 assert NonMemeCommande
 {
@@ -136,4 +134,4 @@ assert CommandeLivraisonUnique
 }
 check CommandeLivraisonUnique
 
-*/
+

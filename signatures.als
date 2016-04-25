@@ -32,7 +32,7 @@ one sig Entrepot
 sig Receptacle
 {	
 	pos: one Position,
-	rcap: Int[7] // valeur à revoir
+	rcap: Int[7] 
 }
 
 sig Drone 
@@ -40,7 +40,7 @@ sig Drone
 	positions: set Position,
 	pos : positions one -> Time,
 	cmd : Commande lone -> Time,
-	dcap : Int[7], // valeur à revoir
+	dcap : Int[7], 
 	charge: Int one -> Time, 
 	batterie : Int one -> Time 
 }
